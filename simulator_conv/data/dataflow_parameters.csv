@@ -1,0 +1,4 @@
+m,k,n,dataflow,loops,dataflow_M,dataflow_K
+32,32,32,os,kmn,Batch_OY_OX,C_FH_FW
+32,32,32,os,knm,Batch_OY_OX,C_FH_FW
+32,32,32,os,mnk,Batch_OY_OX,C_FH_FW

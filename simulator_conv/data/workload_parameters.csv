@@ -1,0 +1,4 @@
+level_total,IX,IY,FW,FH,C_channel,K_channel,Batchsize,Stride,Padding
+3,15,15,3,3,256,384,2,1,valid
+,15,15,3,3,256,384,2,1,valid
+,15,15,3,3,256,384,2,1,valid
