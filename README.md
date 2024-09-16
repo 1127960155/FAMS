@@ -1,6 +1,6 @@
 # FAMS (Framework of Storage-centric Mapping for DNNs on Systolic Array Accelerators)
 
-FAMS is an open-source framework that provides a storage-centric mapping solution for deep neural networks (DNNs) on systolic arrays. It aims to optimize the mapping strategy to improve data reuse and processing element (PE) utilization, thereby enhancing the performance and efficiency of DNN computations on systolic arrays.
+FAMS is an open-source framework that provides a memory-centric mapping solution for deep neural networks (DNNs) on systolic arrays. It aims to optimize the mapping strategy to improve data reuse and processing element (PE) utilization, thereby enhancing the performance and efficiency of DNN computations on systolic arrays.
 
 Features
 
