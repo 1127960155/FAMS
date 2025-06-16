@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 import transform_unit_repeat as t
 import transform_unit_repeat_last as tlast
-import img2col_coordinate as ic
 import functions as f
 import csv
 import numpy as np
