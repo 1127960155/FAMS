@@ -70,6 +70,7 @@ def generate_all_strategies(workload: WorkloadParam, arch: ArchitectureParam) ->
     return strategies
 
 def save_map_space(strategies: List[DataflowStrategy], out_csv: str):
+    os.makedirs(os.path.dirname(out_csv), exist_ok=True)  # <--- 确保目录存在
     if not strategies:
         print("No mapping strategies to save.")
         return
