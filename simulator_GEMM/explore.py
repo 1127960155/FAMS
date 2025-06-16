@@ -152,8 +152,14 @@ def run_simulation(arch: ArchitectureParam, wl: WorkloadParam, dfs: DataflowStra
                 sim_result = rows[0]  # 只取一行（通常就是唯一结果）
             else:
                 sim_result = {}
+        try:
+            os.remove(result_file)
+        except Exception as e:
+            print(f"Warning: could not delete {result_file}: {e}")
     else:
         sim_result = {}
+    
+    
 
     # 合并所有参数与仿真统计结果
     result = {**arch.to_dict(), **wl.to_dict(), **dfs.to_dict()}
