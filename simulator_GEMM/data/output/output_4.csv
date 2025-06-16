@@ -1,2 +1,2 @@
 cycle,computation_cycle,communication_cycle,communication_A_cycle,communication_B_cycle,communication_C_cycle,communication_Y_cycle,PE_utility,throughput,communication_off_chip,communication_on_chip,communication_interval,communication_internal,energy_cost_communication,energy_cost_computation
-197887,65664,22528,16384,2048,2048,2048,0.33117890513272724,339.1271988559127,1441792,4456448,138149888,201326592,792723456,67108864
+874,320,368,64,64,128,112,0.2929061784897025,299.9359267734554,24576,32768,777728,786432,7453696,262144
