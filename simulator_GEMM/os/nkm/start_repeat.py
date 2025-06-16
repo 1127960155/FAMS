@@ -3296,7 +3296,7 @@ if tracking == 1:
 communication_cycle = communication_cycle + communication_A_cycle + communication_B_cycle + communication_C_cycle + communication_Y_cycle
 PE_utility = M * K * N / (cycle * Array_i * Array_j)
 throughput = M * K * N / cycle
-energy_cost_communication = communication_off_chip * 200 + communication_on_chip * 6 + communication_interval * 2 + communication_internal
+energy_cost_communication = communication_off_chip * 200 + communication_on_chip * 6 + communication_internal
 energy_cost_computation = communication_internal // 3
 computation_cycle = Array_i * compute_pipeline + M * f.roundup(K, Array_i) * f.roundup(N, Array_j) + Array_j
 output_file = open('./data/output/output_%d.csv'%(level_num), 'w')
