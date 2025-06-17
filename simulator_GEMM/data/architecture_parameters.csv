@@ -1,2 +1,0 @@
-bandwidth(B),data_precision(bit),compute_pipeline,Array_i(height),Array_j(width),sram_size
-256,8,1,32,32,131072
