@@ -1,4 +1,5 @@
 #TODO: 缓存空间似乎给的太大了，可以再测测更小的缓存
+# TODO: 为简化处理，假设所有的工作负载都是正方形矩阵，排除了IS数据流
 import os
 import csv
 import time
@@ -49,7 +50,7 @@ def roundup(X, x):
 def generate_all_strategies(workload: WorkloadParam, arch: ArchitectureParam) -> List[DataflowStrategy]:
     M, K, N = workload.M, workload.K, workload.N
     array_step = arch.Array_i
-    dataflows = ["is", "ws", "os"]
+    dataflows = ["ws", "os"]    
     loops_list = ["nkm", "nmk", "kmn", "knm", "mnk", "mkn"]
     sram_limit = arch.sram_size // 2
     strategies = []
