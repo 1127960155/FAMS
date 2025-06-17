@@ -1,5 +1,6 @@
 #TODO: 缓存空间似乎给的太大了，可以再测测更小的缓存
 # TODO: 为简化处理，假设所有的工作负载都是正方形矩阵，排除了IS数据流
+#TODO：似乎没有写出总能耗和edp
 import os
 import csv
 import time
@@ -193,9 +194,9 @@ def save_results(results: List[Dict[str, Any]], out_csv: str):
 # -----------------------------
 def main():
     time_start = time.time()
-    array_sizes = [(32, 32), (64, 64), (128, 128), (256, 256)]
-    sram_sizes_total = [256*1024, 512*1024, 1024*1024, 2048*1024]
-    bitwidths = [128, 256, 512, 1024, 2048]
+    array_sizes = [(32, 32), (64, 64), (128, 128), (256, 256)] # 缩小了映射空间范围
+    sram_sizes_total = [256*1024, 512*1024,1024*1024]
+    bitwidths = [128, 256, 512, 1024, 2048 ]  # 注意：这里的bitwidths是以bit为单位的
     workload_shapes = [(128, 128, 128), (256, 256, 256), (512, 512, 512), (1024, 1024, 1024)]
     
     # test
