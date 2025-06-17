@@ -236,10 +236,17 @@ def main():
                 f"bw{arch.bandwidth}B_"
                 f"M{wl.M}_K{wl.K}_N{wl.N}"
             )
+            map_space_path = os.path.join(folder_name, "map_space.csv")
+            result_csv_path = os.path.join(folder_name, "result.csv")
+            
+            # ----------- 检查是否已存在，若已完成则跳过 -----------
+            if os.path.exists(result_csv_path) and os.path.exists(map_space_path):
+                print(f"【跳过】{folder_name} 已存在 result.csv 和 map_space.csv，跳过本配置。")
+                continue
+            
             idx = 1 # 用于标识每种组合配置下各个映射策略的仿真序号
             os.makedirs(folder_name, exist_ok=True)
             strategies = generate_all_strategies(wl, arch)
-            map_space_path = os.path.join(folder_name, "map_space.csv")
             save_map_space(strategies, map_space_path)
             config_results = []
             print(f"\n==== Running Simulation {idx} ====")
@@ -249,7 +256,6 @@ def main():
                 result = run_simulation(arch, wl, dfs, idx)
                 config_results.append(result)
                 idx += 1
-            result_csv_path = os.path.join(folder_name, "result.csv")
             save_results(config_results, result_csv_path)
 
     print('\nSimulation complete.')
