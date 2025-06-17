@@ -1,11 +1,12 @@
-#TODO：校验容量相关逻辑
+#TODO: 缓存空间似乎给的太大了，可以再测测更小的缓存
 import os
 import csv
 import time
 from typing import List, Dict, Any
+from tqdm import tqdm
 
 # -----------------------------
-# 架构、负载、映射参数类定义
+# 参数类定义（同你原本代码）
 # -----------------------------
 class ArchitectureParam:
     def __init__(self, bandwidth, data_precision, compute_pipeline, Array_i, Array_j, sram_size):
@@ -40,18 +41,17 @@ class DataflowStrategy:
         return vars(self)
 
 # -----------------------------
-# 辅助函数
+# 其它通用函数
 # -----------------------------
 def roundup(X, x):
     return (X + x - 1) // x
 
 def generate_all_strategies(workload: WorkloadParam, arch: ArchitectureParam) -> List[DataflowStrategy]:
-    """为给定workload/arch，生成所有合法的DataflowStrategy（m/k/n都要是array_i倍数且能整除M/K/N，且 m*k, k*n, m*n < sram_size/2）"""
     M, K, N = workload.M, workload.K, workload.N
-    array_step = arch.Array_i  # array_i == array_j
+    array_step = arch.Array_i
     dataflows = ["is", "ws", "os"]
     loops_list = ["nkm", "nmk", "kmn", "knm", "mnk", "mkn"]
-    sram_limit = arch.sram_size // 2  # 半容量
+    sram_limit = arch.sram_size // 2
     strategies = []
     for m in range(array_step, M+1, array_step):
         if M % m != 0:
@@ -62,7 +62,6 @@ def generate_all_strategies(workload: WorkloadParam, arch: ArchitectureParam) ->
             for n in range(array_step, N+1, array_step):
                 if N % n != 0:
                     continue
-                # SRAM约束
                 if (m * k >= sram_limit) or (k * n >= sram_limit) or (m * n >= sram_limit):
                     continue
                 for dataflow in dataflows:
@@ -71,7 +70,7 @@ def generate_all_strategies(workload: WorkloadParam, arch: ArchitectureParam) ->
     return strategies
 
 def save_map_space(strategies: List[DataflowStrategy], out_csv: str):
-    os.makedirs(os.path.dirname(out_csv), exist_ok=True)  # <--- 确保目录存在
+    os.makedirs(os.path.dirname(out_csv), exist_ok=True)
     if not strategies:
         print("No mapping strategies to save.")
         return
@@ -82,6 +81,10 @@ def save_map_space(strategies: List[DataflowStrategy], out_csv: str):
         for strategy in strategies:
             writer.writerow(strategy.to_dict())
 
+
+
+# -----------------------------
+# 运行一次仿真（每次覆盖写参数CSV到data/目录）
 def append_architecture_csv(arch: ArchitectureParam):
     file_path = 'data/architecture_parameters.csv'
     header = ['bandwidth(B)','data_precision(bit)','compute_pipeline','Array_i(height)','Array_j(width)','sram_size']
@@ -121,31 +124,33 @@ def clear_all_csv():
         if os.path.exists(fname):
             os.remove(fname)
 
-def run_simulation(arch: ArchitectureParam, wl: WorkloadParam, dfs: DataflowStrategy, idx: int) -> Dict[str, Any]:
-    os.makedirs('data/output', exist_ok=True)
-    # 追加参数到csv，三者都可能重复
+
+# -----------------------------
+def run_simulation(arch, wl, dfs, idx):
+    # 1. 覆盖写入参数文件
+    clear_all_csv()
     append_architecture_csv(arch)
     append_workload_csv(wl)
     append_dataflow_csv(dfs)
+    # 2. 写中间变量文件（也放在data/，如有需要可放入output_dir）
     intermediate_variables_path = 'data/intermediate_variables.txt'
     with open(intermediate_variables_path, 'w') as f:
-        f.write(str(idx) + '\n')
-        f.write('0\n')  # tracking参数
-
+        f.write('1\n')
+        f.write('0\n')
+    # 3. 判定仿真类型和路径
     m_loop_times = roundup(wl.M, dfs.m)
     k_loop_times = roundup(wl.K, dfs.k)
     n_loop_times = roundup(wl.N, dfs.n)
-
     if m_loop_times == 1 and k_loop_times == 1 and n_loop_times == 1:
         cmd = f"python ./os/once/start_once.py"
     else:
         cmd = f"python ./os/{dfs.loops}/start_repeat.py"
+        
 
-    print(f"[#{idx}] CMD: {cmd}")
+    # print(f"[#{idx}] CMD: {cmd}")
     ret = os.system(cmd)
-
-    # 改为读取真实模拟结果 output_{idx}.csv
-    result_file = f'./data/output/output_{idx}.csv'
+    # 4. 读取仿真结果并删除
+    result_file = f'./data/output/output_1.csv'
     if os.path.exists(result_file):
         with open(result_file, 'r', newline='') as rf:
             reader = csv.DictReader(rf)
@@ -153,17 +158,14 @@ def run_simulation(arch: ArchitectureParam, wl: WorkloadParam, dfs: DataflowStra
             if rows:
                 sim_result = rows[0]  # 只取一行（通常就是唯一结果）
             else:
-                sim_result = {}
+                sim_result = {}        
         try:
             os.remove(result_file)
         except Exception as e:
             print(f"Warning: could not delete {result_file}: {e}")
     else:
         sim_result = {}
-    
-    
-
-    # 合并所有参数与仿真统计结果
+    # 5. 合并统计
     result = {**arch.to_dict(), **wl.to_dict(), **dfs.to_dict()}
     result.update({
         'm_loop_times': m_loop_times,
@@ -172,9 +174,8 @@ def run_simulation(arch: ArchitectureParam, wl: WorkloadParam, dfs: DataflowStra
         'cmd': cmd,
         'ret_code': ret
     })
-    result.update(sim_result)  # 添加所有仿真统计字段（如cycle, throughput, energy...）
+    result.update(sim_result)
     return result
-
 
 def save_results(results: List[Dict[str, Any]], out_csv: str):
     if not results:
@@ -186,54 +187,71 @@ def save_results(results: List[Dict[str, Any]], out_csv: str):
         writer.writeheader()
         for row in results:
             writer.writerow(row)
-
 # -----------------------------
 # 主流程
 # -----------------------------
 def main():
     time_start = time.time()
-    clear_all_csv()
+    array_sizes = [(32, 32), (64, 64), (128, 128), (256, 256)]
+    sram_sizes_total = [256*1024, 512*1024, 1024*1024, 2048*1024]
+    bitwidths = [128, 256, 512, 1024, 2048]
+    workload_shapes = [(128, 128, 128), (256, 256, 256), (512, 512, 512), (1024, 1024, 1024)]
+    
+    # test
+    # array_sizes = [(32, 32), (64, 64)]
+    # sram_sizes_total = [256*1024]
+    # bitwidths = [128]
+    # workload_shapes = [(128, 128, 128)]
+    
+    sram_sizes = [s // 2 for s in sram_sizes_total]  # 由于双缓冲，只能使用其一半的容量
+    byte_bandwidths = [b // 8 for b in bitwidths]
+    data_precision = 8
+    compute_pipeline = 1
 
-    architectures = [
-        ArchitectureParam(
-            bandwidth=64, 
-            data_precision=8, 
-            compute_pipeline=1, 
-            Array_i=32, 
-            Array_j=32, 
-            sram_size=256*1024  # 单位: Bytes
-        ),
-        # 可以继续添加其他架构
-    ]
+    architectures = []
+    for (ai, aj) in array_sizes:
+        for sram in sram_sizes:
+            for bw in byte_bandwidths:
+                architectures.append(
+                    ArchitectureParam(
+                        bandwidth=bw,
+                        data_precision=data_precision,
+                        compute_pipeline=compute_pipeline,
+                        Array_i=ai,
+                        Array_j=aj,
+                        sram_size=sram
+                    )
+                )
 
-    workloads = [
-        WorkloadParam(
-            M=64, 
-            K=64, 
-            N=64
-        ),
-        # 可以继续添加其他 workload
-    ]
+    
+    workloads = [WorkloadParam(M=m, K=k, N=n) for (m, k, n) in workload_shapes]
 
-    results = []
-    idx = 1
+    
     for arch in architectures:
         for wl in workloads:
+            folder_name = (
+                f"data/output/array{arch.Array_i}x{arch.Array_j}_"
+                f"sram{arch.sram_size//1024}KB_"
+                f"bw{arch.bandwidth}B_"
+                f"M{wl.M}_K{wl.K}_N{wl.N}"
+            )
+            idx = 1 # 用于标识每种组合配置下各个映射策略的仿真序号
+            os.makedirs(folder_name, exist_ok=True)
             strategies = generate_all_strategies(wl, arch)
-            save_map_space(strategies, "data/output/map_space.csv")
-            for dfs in strategies:
-                print(f"\n==== Running Simulation {idx} ====")
-                print("Architecture:", arch.to_dict())
-                print("Workload    :", wl.to_dict())
-                print("Dataflow    :", dfs.to_dict())
+            map_space_path = os.path.join(folder_name, "map_space.csv")
+            save_map_space(strategies, map_space_path)
+            config_results = []
+            print(f"\n==== Running Simulation {idx} ====")
+            print("Architecture:", arch.to_dict())
+            print("Workload    :", wl.to_dict())
+            for dfs in tqdm(strategies, desc=f"Simulating {folder_name}"):
                 result = run_simulation(arch, wl, dfs, idx)
-                results.append(result)
+                config_results.append(result)
                 idx += 1
+            result_csv_path = os.path.join(folder_name, "result.csv")
+            save_results(config_results, result_csv_path)
 
-    output_csv = 'data/output/simulation_summary.csv'
-    save_results(results, output_csv)
-
-    print(f"\nSimulation complete. Results saved to {output_csv}")
+    print('\nSimulation complete.')
     print('Total cost time: {:.2f} seconds'.format(time.time() - time_start))
 
 if __name__ == '__main__':
