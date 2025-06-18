@@ -194,6 +194,77 @@ def save_results(results: List[Dict[str, Any]], out_csv: str):
 # -----------------------------
 def main():
     time_start = time.time()
+    array_sizes = [(128, 128)] # 缩小了映射空间范围
+    sram_sizes_total = [64*1024,128*1024,256*1024, 512*1024]
+    bitwidths = [512, 1024, 2048 ]  # 注意：这里的bitwidths是以bit为单位的
+    workload_shapes = [(128, 128, 128), (256, 256, 256), (512, 512, 512), (1024, 1024, 1024)]
+    
+    # test
+    # array_sizes = [(32, 32), (64, 64)]
+    # sram_sizes_total = [256*1024]
+    # bitwidths = [128]
+    # workload_shapes = [(128, 128, 128)]
+    
+    sram_sizes = [s // 2 for s in sram_sizes_total]  # 由于双缓冲，只能使用其一半的容量
+    byte_bandwidths = [b // 8 for b in bitwidths]
+    data_precision = 8
+    compute_pipeline = 1
+
+    architectures = []
+    for (ai, aj) in array_sizes:
+        for sram in sram_sizes:
+            for bw in byte_bandwidths:
+                architectures.append(
+                    ArchitectureParam(
+                        bandwidth=bw,
+                        data_precision=data_precision,
+                        compute_pipeline=compute_pipeline,
+                        Array_i=ai,
+                        Array_j=aj,
+                        sram_size=sram
+                    )
+                )
+
+    
+    workloads = [WorkloadParam(M=m, K=k, N=n) for (m, k, n) in workload_shapes]
+
+    
+    for arch in architectures:
+        for wl in workloads:
+            folder_name = (
+                f"data/output/array{arch.Array_i}x{arch.Array_j}_"
+                f"sram{arch.sram_size//1024}KB_"
+                f"bw{arch.bandwidth}B_"
+                f"M{wl.M}_K{wl.K}_N{wl.N}"
+            )
+            map_space_path = os.path.join(folder_name, "map_space.csv")
+            result_csv_path = os.path.join(folder_name, "result.csv")
+            
+            print("folder_name:", folder_name)
+            # ----------- 检查是否已存在，若已完成则跳过 -----------
+            if os.path.exists(result_csv_path) and os.path.exists(map_space_path):
+                print(f"【跳过】{folder_name} 已存在 result.csv 和 map_space.csv，跳过本配置。")
+                continue
+            
+            idx = 1 # 用于标识每种组合配置下各个映射策略的仿真序号
+            os.makedirs(folder_name, exist_ok=True)
+            strategies = generate_all_strategies(wl, arch)
+            save_map_space(strategies, map_space_path)
+            config_results = []
+            print(f"\n==== Running Simulation {idx} ====")
+            print("Architecture:", arch.to_dict())
+            print("Workload    :", wl.to_dict())
+            for dfs in tqdm(strategies, desc=f"Simulating {folder_name}"):
+                result = run_simulation(arch, wl, dfs, idx)
+                config_results.append(result)
+                idx += 1
+            save_results(config_results, result_csv_path)
+
+    print('\nSimulation complete.')
+    print('Total cost time: {:.2f} seconds'.format(time.time() - time_start))
+
+    # 原运行配置
+    time_start = time.time()
     array_sizes = [(32, 32), (64, 64), (128, 128), (256, 256)] # 缩小了映射空间范围
     sram_sizes_total = [256*1024, 512*1024,1024*1024]
     bitwidths = [128, 256, 512, 1024, 2048 ]  # 注意：这里的bitwidths是以bit为单位的
