@@ -240,6 +240,7 @@ def main():
             map_space_path = os.path.join(folder_name, "map_space.csv")
             result_csv_path = os.path.join(folder_name, "result.csv")
             
+            print("folder_name:", folder_name)
             # ----------- 检查是否已存在，若已完成则跳过 -----------
             if os.path.exists(result_csv_path) and os.path.exists(map_space_path):
                 print(f"【跳过】{folder_name} 已存在 result.csv 和 map_space.csv，跳过本配置。")
