@@ -53,7 +53,7 @@ def generate_all_strategies(workload: WorkloadParam, arch: ArchitectureParam) ->
     array_step = arch.Array_i
     dataflows = ["ws", "os"]    
     loops_list = ["nkm", "nmk", "kmn", "knm", "mnk", "mkn"]
-    sram_limit = arch.sram_size // 2
+    sram_limit = arch.sram_size // 2  # 由于双缓冲，只能使用其一半的容量
     strategies = []
     for m in range(array_step, M+1, array_step):
         if M % m != 0:
@@ -195,7 +195,7 @@ def save_results(results: List[Dict[str, Any]], out_csv: str):
 def main():
     time_start = time.time()
     array_sizes = [(64, 64), (128, 128), (256, 256)] # 缩小了映射空间范围
-    sram_sizes_total = [64*1024,128*1024,256*1024, 512*1024,1024*1024,2048*1024,4096*1024]
+    sram_sizes = [64*1024,128*1024,256*1024, 512*1024,1024*1024,2048*1024,4096*1024]
     bitwidths = [512, 1024, 2048,4096,8192 ]  # 注意：这里的bitwidths是以bit为单位的
     workload_shapes = [(128, 128, 128), (256, 256, 256), (512, 512, 512), (1024, 1024, 1024),(2048, 2048, 2048)]
     
@@ -205,7 +205,6 @@ def main():
     # bitwidths = [128]
     # workload_shapes = [(128, 128, 128)]
     
-    sram_sizes = [s // 2 for s in sram_sizes_total]  # 由于双缓冲，只能使用其一半的容量
     byte_bandwidths = [b // 8 for b in bitwidths]
     data_precision = 8
     compute_pipeline = 1
