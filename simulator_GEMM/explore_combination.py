@@ -64,7 +64,7 @@ def generate_all_strategies(workload: WorkloadParam, arch: ArchitectureParam) ->
             for n in range(array_step, N+1, array_step):
                 if N % n != 0:
                     continue
-                if (m * k >= sram_limit) or (k * n >= sram_limit) or (m * n >= sram_limit):
+                if (m * k > sram_limit) or (k * n > sram_limit) or (m * n > sram_limit):
                     continue
                 for dataflow in dataflows:
                     for loops in loops_list:
@@ -195,7 +195,7 @@ def save_results(results: List[Dict[str, Any]], out_csv: str):
 def main():
     time_start = time.time()
     array_sizes = [(64, 64), (128, 128), (256, 256)] # 缩小了映射空间范围
-    sram_sizes = [64*1024,128*1024,256*1024, 512*1024,1024*1024,2048*1024,4096*1024]
+    sram_sizes = [32* 1024,64*1024,128*1024,256*1024, 512*1024,1024*1024,2048*1024,4096*1024]
     bitwidths = [512, 1024, 2048,4096,8192 ]  # 注意：这里的bitwidths是以bit为单位的
     workload_shapes = [(128, 128, 128), (256, 256, 256), (512, 512, 512), (1024, 1024, 1024),(2048, 2048, 2048)]
     
