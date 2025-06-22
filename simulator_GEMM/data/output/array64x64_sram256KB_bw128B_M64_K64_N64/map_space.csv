@@ -1,0 +1,13 @@
+m,k,n,dataflow,loops
+64,64,64,ws,nkm
+64,64,64,ws,nmk
+64,64,64,ws,kmn
+64,64,64,ws,knm
+64,64,64,ws,mnk
+64,64,64,ws,mkn
+64,64,64,os,nkm
+64,64,64,os,nmk
+64,64,64,os,kmn
+64,64,64,os,knm
+64,64,64,os,mnk
+64,64,64,os,mkn
