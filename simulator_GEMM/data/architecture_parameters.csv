@@ -1,2 +1,2 @@
 bandwidth(B),data_precision(bit),compute_pipeline,Array_i(height),Array_j(width),sram_size
-256,8,1,256,256,16777216
+1024,8,1,256,256,33554432
